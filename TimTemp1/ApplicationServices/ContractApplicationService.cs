@@ -20,7 +20,7 @@ namespace TimTemp1.ApplicationServices
             Bus.RaiseEvent(new StartCreatingContractEvent());
 
             var command = new CreateContractCommand();
-            await Bus.SendCommand(command);
+            Bus.SendCommand(command);
             var commandComplitionResult = await Bus.WaitCommandCompletion(command.Id, CommandCompletionTimeout);
 
             Bus.RaiseEvent(new FinishCreatingContractEvent());

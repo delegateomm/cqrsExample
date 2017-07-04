@@ -8,6 +8,10 @@ namespace TimTemp1.Sagas
     /// </summary>
     public class ContractSaga : BaseSaga
     {
+        public ContractSaga(IBus bus) : base(bus)
+        {
+        }
+
         public void Handle(CreateContractCommand command)
         {
             //TODO finish

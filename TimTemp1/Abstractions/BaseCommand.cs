@@ -6,6 +6,7 @@ namespace TimTemp1.Abstractions
     {
         public Guid Id { get; set; }
         public DateTime Timestamp { get; }
+        public string SagaName { get; set; }
 
         protected BaseCommand()
         {

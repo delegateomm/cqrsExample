@@ -46,6 +46,8 @@ namespace TimTemp1.Abstractions
         Guid Id { get; set; }
 
         DateTime Timestamp { get; }
+
+        string SagaName { get; }
     }
 
     public interface ICommandCompletionEvent : IDomainEvent

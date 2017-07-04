@@ -6,6 +6,13 @@
     /// </summary>
     public abstract class BaseSaga : ISaga
     {
+        protected IBus Bus { get; set; }
+
+        protected BaseSaga(IBus bus)
+        {
+            Bus = bus;
+        }
+
         /// <summary>
         /// in child class need implementing overloaded methods void Handle() with concrete command type
         /// </summary>

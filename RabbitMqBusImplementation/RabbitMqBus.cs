@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using RabbitMQ.Client;
@@ -53,6 +54,9 @@ namespace RabbitMqBusImplementation
             _eventConsumer = new EventingBasicConsumer(_rabbitChannel);
             _eventConsumer.Received += OnEventRecieved;
             _rabbitChannel.BasicConsume(_personalEventsQueueName, true, _eventConsumer);
+
+            _commandConsumer = new EventingBasicConsumer(_rabbitChannel);
+            _commandConsumer.Received += OnCommandRecieved;
         }
 
         public void Dispose()
@@ -64,13 +68,17 @@ namespace RabbitMqBusImplementation
 
         public void RegisterSaga<T>() where T : ISaga
         {
-            _registeredSagas.Add(typeof(T));
-            if (_commandConsumer == null)
-            {
-                _commandConsumer = new EventingBasicConsumer(_rabbitChannel);
-                _commandConsumer.Received += OnCommandRecieved;
-                _rabbitChannel.BasicConsume(CommandBusQueueName, false, _commandConsumer);
-            }
+            var sagaType = typeof(T);
+
+            _registeredSagas.Add(sagaType);
+            var sagaQueueName = CommandBusQueueName + "." + sagaType.Name;
+
+            var routingKey = CommandsRoutingPrefix + sagaType.Name + ".#";
+
+            _rabbitChannel.QueueDeclare(sagaQueueName, true, false, false);
+            _rabbitChannel.QueueBind(sagaQueueName, CommandsExchangerName, routingKey);
+            _rabbitChannel.BasicConsume(sagaQueueName, false, _commandConsumer);
+
         }
 
         public void RegisterHandler<T>() where T : IDomainEventHandler
@@ -86,9 +94,9 @@ namespace RabbitMqBusImplementation
             var bodyMessage = command.ToGzipRabbitMessageByteArray();
 
             _rabbitChannel.QueueBind(_personalEventsQueueName, EventsExchangerName,
-                CommandEventsRoutingPrefix + "." + command.Id);
+                CommandEventsRoutingPrefix + command.Id);
 
-            var routingKey = CommandsRoutingPrefix + typeof(T).Name;
+            var routingKey = CommandsRoutingPrefix + command.SagaName + "." + typeof(T).Name;
 
             _rabbitChannel.BasicPublish(CommandsExchangerName, routingKey, null, bodyMessage);
         }
@@ -118,19 +126,20 @@ namespace RabbitMqBusImplementation
         //TODO - если возникнет ситуация когда не будет обработчика ни в одной подписанной саге у шины (сообщение из очереди будет уже поглощено)
         private void OnCommandRecieved(object sender, BasicDeliverEventArgs args)
         {
-            var commandTypeStringName = args.RoutingKey.Replace(CommandsRoutingPrefix, string.Empty);
+            var routingSplit = args.RoutingKey.Split('.');
+
+            // Шаблон - "command.@SagaName.@CommandName"
+            var commandTypeStringName = routingSplit[2];
+            var sagaTypeName = routingSplit[1];
 
             //TODO пока не знаю как лучше сделать - в будущем убрать костыльную привязку к пространству имен
             var commandInstance =
-                (ICommand)
-                GetInstanceFromMessagesBytesByTypeName(args.Body, "TimTemp1.Commands." + commandTypeStringName);
+                (ICommand) GetInstanceFromMessagesBytesByTypeName(args.Body, "TimTemp1.Commands." + commandTypeStringName);
 
-            foreach (var sagaType in _registeredSagas)
-            {
-                // Создаю экземпляр Саги с конструктором вида Saga(IBus bus)
-                var instanceOfSaga = (ISaga) Activator.CreateInstance(sagaType, this);
-                instanceOfSaga.Execute(commandInstance);
-            }
+            var sagaType = _registeredSagas.FirstOrDefault(f => f.Name == sagaTypeName);
+            // Создаю экземпляр Саги с конструктором вида Saga(IBus bus)
+            var instanceOfSaga = (ISaga) Activator.CreateInstance(sagaType, this);
+            instanceOfSaga.Execute(commandInstance);
         }
 
         private object GetInstanceFromMessagesBytesByTypeName(byte[] messageBody, string fullTypeName)
