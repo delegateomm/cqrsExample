@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.26403.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimTemp1", "TimTemp1\TimTemp1.csproj", "{929F6B1E-AC1D-47B5-9628-8F8BB9F2284D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMqBusImplementation", "RabbitMqBusImplementation\RabbitMqBusImplementation.csproj", "{C195819E-A84F-42E7-BBF9-3866ABD8B9E5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{929F6B1E-AC1D-47B5-9628-8F8BB9F2284D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{929F6B1E-AC1D-47B5-9628-8F8BB9F2284D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{929F6B1E-AC1D-47B5-9628-8F8BB9F2284D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C195819E-A84F-42E7-BBF9-3866ABD8B9E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C195819E-A84F-42E7-BBF9-3866ABD8B9E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C195819E-A84F-42E7-BBF9-3866ABD8B9E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C195819E-A84F-42E7-BBF9-3866ABD8B9E5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

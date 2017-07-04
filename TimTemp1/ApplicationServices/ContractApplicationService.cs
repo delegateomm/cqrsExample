@@ -18,7 +18,11 @@ namespace TimTemp1.ApplicationServices
         public async Task CreateConract()
         {
             Bus.RaiseEvent(new StartCreatingContractEvent());
-            await Bus.SendCommand(new CreateContractCommand());
+
+            var command = new CreateContractCommand();
+            await Bus.SendCommand(command);
+            var commandComplitionResult = await Bus.WaitCommandCompletion(command.Id, CommandCompletionTimeout);
+
             Bus.RaiseEvent(new FinishCreatingContractEvent());
         }
     }
