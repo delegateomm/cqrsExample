@@ -13,12 +13,13 @@ namespace RabbitMqBusImplementation
     public class RabbitMqBus : IBus, IDisposable
     {
         private Dictionary<Guid, TaskCompletionSource<CommandCompletionStatus>> _commandsTasks;
-        private readonly ConnectionFactory _connectionFactory;
         private readonly IConnection _rabbitConnection;
         private readonly IModel _rabbitChannel;
         private readonly string _personalEventsQueueName;
         private HashSet<Type> _registeredSagas;
         private HashSet<Type> _registeredEventHandlers;
+        private List<Type> _knownDomainEventTypes;
+        private List<Type> _knownCommandTypes;
 
         private readonly EventingBasicConsumer _eventConsumer;
         private EventingBasicConsumer _commandConsumer;
@@ -29,15 +30,25 @@ namespace RabbitMqBusImplementation
         private const string CommandEventsRoutingPrefix = "commandResult.";
         private const string EventsRoutingPrefix = "event.";
         private const string CommandsRoutingPrefix = "command.";
+        private string _rmqUser = "tempCqrsBusUser";
+        private string _rmqPassword = "qazWSX123";
 
-        public RabbitMqBus(Uri serverUri)
+        public RabbitMqBus(string serverUri)
         {
             _commandsTasks = new Dictionary<Guid, TaskCompletionSource<CommandCompletionStatus>>();
             _registeredSagas = new HashSet<Type>();
             _registeredEventHandlers = new HashSet<Type>();
+            _knownDomainEventTypes = new List<Type>();
+            _knownCommandTypes = new List<Type>();
 
-            _connectionFactory = new ConnectionFactory {HostName = serverUri.ToString()};
-            _rabbitConnection = _connectionFactory.CreateConnection();
+            var connectionFactory = new ConnectionFactory
+            {
+                HostName = serverUri.ToString(),
+                UserName = _rmqUser,
+                Password = _rmqPassword,
+                VirtualHost = "dev"
+            };
+            _rabbitConnection = connectionFactory.CreateConnection();
             _rabbitChannel = _rabbitConnection.CreateModel();
 
             _rabbitChannel.QueueDeclare(CommandBusQueueName, true, false, false);
@@ -84,6 +95,8 @@ namespace RabbitMqBusImplementation
         public void RegisterHandler<T>() where T : IDomainEventHandler
         {
             _registeredEventHandlers.Add(typeof(T));
+
+            _rabbitChannel.QueueBind(_personalEventsQueueName, EventsExchangerName, "#");
         }
 
         public void SendCommand<T>(T command) where T : ICommand
@@ -91,7 +104,7 @@ namespace RabbitMqBusImplementation
             TaskCompletionSource<CommandCompletionStatus> tcs = new TaskCompletionSource<CommandCompletionStatus>();
             _commandsTasks.Add(command.Id, tcs);
 
-            var bodyMessage = command.ToGzipRabbitMessageByteArray();
+            var bodyMessage = command.ToRabbitMessageByteArray();
 
             _rabbitChannel.QueueBind(_personalEventsQueueName, EventsExchangerName,
                 CommandEventsRoutingPrefix + command.Id);
@@ -103,9 +116,18 @@ namespace RabbitMqBusImplementation
 
         public void RaiseEvent<T>(T domainEvent) where T : IDomainEvent
         {
-            var bodyMessage = domainEvent.ToGzipRabbitMessageByteArray();
+            var bodyMessage = domainEvent.ToRabbitMessageByteArray();
 
-            var routingKey = typeof(T).Name;
+            var routingKey = EventsRoutingPrefix + typeof(T).Name;
+
+            _rabbitChannel.BasicPublish(EventsExchangerName, routingKey, null, bodyMessage);
+        }
+
+        public void RaiseCommandCompletionEventEvent(ICommandCompletionEvent commandCompletionEvent)
+        {
+            var bodyMessage = commandCompletionEvent.ToRabbitMessageByteArray();
+
+            var routingKey = CommandEventsRoutingPrefix + commandCompletionEvent.Id;
 
             _rabbitChannel.BasicPublish(EventsExchangerName, routingKey, null, bodyMessage);
         }
@@ -117,9 +139,17 @@ namespace RabbitMqBusImplementation
 
             var commandTask = _commandsTasks[commandId].Task;
 
-            _commandsTasks.Remove(commandId);
-
             return commandTask;
+        }
+
+        public void RigesterDomainEventsTypes(IEnumerable<Type> types)
+        {
+            _knownDomainEventTypes.AddRange(types);
+        }
+
+        public void RigesterCommandTypes(IEnumerable<Type> types)
+        {
+            _knownCommandTypes.AddRange(types);
         }
 
         //TODO - много вопросов как сделать красиво выполнение комманд сагами,
@@ -134,21 +164,22 @@ namespace RabbitMqBusImplementation
 
             //TODO пока не знаю как лучше сделать - в будущем убрать костыльную привязку к пространству имен
             var commandInstance =
-                (ICommand) GetInstanceFromMessagesBytesByTypeName(args.Body, "TimTemp1.Commands." + commandTypeStringName);
+                (ICommand) GetInstanceFromMessagesBytesByType(args.Body,
+                    _knownCommandTypes.FirstOrDefault(f => f.Name == commandTypeStringName));
 
             var sagaType = _registeredSagas.FirstOrDefault(f => f.Name == sagaTypeName);
             // Создаю экземпляр Саги с конструктором вида Saga(IBus bus)
             var instanceOfSaga = (ISaga) Activator.CreateInstance(sagaType, this);
             instanceOfSaga.Execute(commandInstance);
+            _rabbitChannel.BasicAck(args.DeliveryTag, false);
         }
 
-        private object GetInstanceFromMessagesBytesByTypeName(byte[] messageBody, string fullTypeName)
+        private object GetInstanceFromMessagesBytesByType(byte[] messageBody, Type type)
         {
-            var commandType = Type.GetType(fullTypeName);
             MethodInfo byteArrayToObjectMethod = typeof(RabbitMqBus).GetMethod("ByteArrayToObject",
                 BindingFlags.NonPublic | BindingFlags.Static);
 
-            byteArrayToObjectMethod = byteArrayToObjectMethod.MakeGenericMethod(commandType);
+            byteArrayToObjectMethod = byteArrayToObjectMethod.MakeGenericMethod(type);
             object[] arguments = { messageBody };
 
             var objectInstance = byteArrayToObjectMethod.Invoke(null, arguments);
@@ -173,7 +204,10 @@ namespace RabbitMqBusImplementation
                 var commandCompletionEvent = args.Body.ToObject<CommandCompletionEvent>();
 
                 if (_commandsTasks.ContainsKey(commandId))
+                {
                     _commandsTasks[commandId].TrySetResult(commandCompletionEvent.CompletionStatus);
+                    _commandsTasks.Remove(commandId);
+                }
 
                 _rabbitChannel.QueueUnbind(_personalEventsQueueName, EventsExchangerName, args.RoutingKey);
                 return;
@@ -182,7 +216,8 @@ namespace RabbitMqBusImplementation
             //TODO finish
             var eventClassName = args.RoutingKey.Replace(EventsRoutingPrefix, string.Empty);
             var eventInstance =
-                (IDomainEvent) GetInstanceFromMessagesBytesByTypeName(args.Body, "TimTemp1.DomainEvents." + eventClassName);
+                (IDomainEvent) GetInstanceFromMessagesBytesByType(args.Body,
+                    _knownDomainEventTypes.FirstOrDefault(f => f.Name == eventClassName));
 
             foreach (var eventHandlerType in _registeredEventHandlers)
             {

@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimTemp1", "TimTemp1\TimTem
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMqBusImplementation", "RabbitMqBusImplementation\RabbitMqBusImplementation.csproj", "{C195819E-A84F-42E7-BBF9-3866ABD8B9E5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsoleApp", "TestConsoleApp\TestConsoleApp.csproj", "{8A572025-3A2A-4105-AD23-2DD5895C9E6C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{C195819E-A84F-42E7-BBF9-3866ABD8B9E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C195819E-A84F-42E7-BBF9-3866ABD8B9E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C195819E-A84F-42E7-BBF9-3866ABD8B9E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A572025-3A2A-4105-AD23-2DD5895C9E6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A572025-3A2A-4105-AD23-2DD5895C9E6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A572025-3A2A-4105-AD23-2DD5895C9E6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A572025-3A2A-4105-AD23-2DD5895C9E6C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

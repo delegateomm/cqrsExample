@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using TimTemp1.Abstractions.Enums;
 
@@ -29,11 +30,17 @@ namespace TimTemp1.Abstractions
 
         void RaiseEvent<T>(T domainEvent) where T : IDomainEvent;
 
+        void RaiseCommandCompletionEventEvent(ICommandCompletionEvent commandCompletionEvent);
+
         Task<CommandCompletionStatus> WaitCommandCompletion(Guid commandId, TimeSpan timeout);
 
         void RegisterSaga<T>() where T : ISaga;
 
         void RegisterHandler<T>() where T : IDomainEventHandler;
+
+        void RigesterDomainEventsTypes(IEnumerable<Type> types);
+
+        void RigesterCommandTypes(IEnumerable<Type> types);
     }
 
     public interface IDomainEventHandler

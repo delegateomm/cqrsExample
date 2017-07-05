@@ -1,4 +1,5 @@
-﻿using TimTemp1.Abstractions;
+﻿using System;
+using TimTemp1.Abstractions;
 using TimTemp1.Commands;
 
 namespace TimTemp1.Sagas
@@ -14,7 +15,8 @@ namespace TimTemp1.Sagas
 
         public void Handle(CreateContractCommand command)
         {
-            //TODO finish
+            Console.WriteLine($"command Id{command.Id} - {command.GetType().Name} SUCCEED");
+            Bus.RaiseCommandCompletionEventEvent(new CommandCompletionEvent(command.Id));
         }
     }
 }

@@ -4,15 +4,16 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{929F6B1E-AC1D-47B5-9628-8F8BB9F2284D}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TimTemp1</RootNamespace>
-    <AssemblyName>TimTemp1</AssemblyName>
+    <ProjectGuid>{8A572025-3A2A-4105-AD23-2DD5895C9E6C}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>TestConsoleApp</RootNamespace>
+    <AssemblyName>TestConsoleApp</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -22,6 +23,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -40,25 +42,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Abstractions\BaseAggregate.cs" />
-    <Compile Include="Abstractions\BaseApplicationService.cs" />
-    <Compile Include="Abstractions\BaseCommand.cs" />
-    <Compile Include="Abstractions\BaseDomainEvent.cs" />
-    <Compile Include="Abstractions\BaseDomainEventHandler.cs" />
-    <Compile Include="Abstractions\BaseSaga.cs" />
-    <Compile Include="Abstractions\BusConfigurator.cs" />
-    <Compile Include="Abstractions\CommandCompletionEvent.cs" />
-    <Compile Include="Abstractions\Enums\CommandCompletionStatus.cs" />
-    <Compile Include="Abstractions\Interfaces.cs" />
-    <Compile Include="Aggregates\Contract.cs" />
-    <Compile Include="ApplicationServices\ContractApplicationService.cs" />
-    <Compile Include="Commands\CreateContractCommand.cs" />
-    <Compile Include="DomainEventHandlers\TestEventHandler.cs" />
-    <Compile Include="DomainEvents\FinishCreatingContractEvent.cs" />
-    <Compile Include="DomainEvents\StartCreatingContractEvent.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Sagas\ContractSaga.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RabbitMqBusImplementation\RabbitMqBusImplementation.csproj">
+      <Project>{c195819e-a84f-42e7-bbf9-3866abd8b9e5}</Project>
+      <Name>RabbitMqBusImplementation</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TimTemp1\TimTemp1.csproj">
+      <Project>{929f6b1e-ac1d-47b5-9628-8f8bb9f2284d}</Project>
+      <Name>TimTemp1</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

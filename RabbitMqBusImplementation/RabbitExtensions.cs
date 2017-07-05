@@ -12,6 +12,17 @@ namespace RabbitMqBusImplementation
             return JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(source)); //TODO add decompress
         }
 
+        public static byte[] ToRabbitMessageByteArray<T>(this T source)
+        {
+            if (source is string)
+                return Encoding.UTF8.GetBytes(source as string);
+
+            if (source is byte[])
+                return source as byte[];
+
+            return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(source));
+        }
+
         public static byte[] ToGzipRabbitMessageByteArray<T>(this T source)
         {
             if (source is string)
