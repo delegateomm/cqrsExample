@@ -10,6 +10,8 @@ namespace TimTemp1.Abstractions
         public BusConfigurator(IBus bus)
         {
             _bus = bus;
+            RegisterAllDomainEventTypes();
+            RegisterAllComandTypes();
         }
 
         public BusConfigurator RegisterSaga<T>() where T : ISaga
@@ -24,24 +26,22 @@ namespace TimTemp1.Abstractions
             return this;
         }
 
-        public BusConfigurator RegisterAllDomainEventTypes()
+        private void RegisterAllDomainEventTypes()
         {
             var type = typeof(IDomainEvent);
             _bus.RigesterDomainEventsTypes(
                 AppDomain.CurrentDomain.GetAssemblies()
                     .SelectMany(sm => sm.GetTypes())
-                    .Where(w => type.IsAssignableFrom(w)));
-            return this;
+                    .Where(w => type.IsAssignableFrom(w) && w.IsClass));
         }
 
-        public BusConfigurator RegisterAllComandTypes()
+        private void RegisterAllComandTypes()
         {
             var type = typeof(ICommand);
             _bus.RigesterCommandTypes(
                 AppDomain.CurrentDomain.GetAssemblies()
                     .SelectMany(sm => sm.GetTypes())
-                    .Where(w => type.IsAssignableFrom(w)));
-            return this;
+                    .Where(w => type.IsAssignableFrom(w) && w.IsClass));
         }
     }
 }

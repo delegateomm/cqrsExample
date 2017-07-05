@@ -24,11 +24,10 @@ namespace TestConsoleApp
         {
             IBus bus = new RabbitMqBus("timnginxdev01.spb.local");
             var configurator = new BusConfigurator(bus);
+
             configurator
                 .RegisterSaga<ContractSaga>()
-                .RegisterHandler<TestEventHandler>()
-                .RegisterAllDomainEventTypes()
-                .RegisterAllComandTypes();
+                .RegisterHandler<TestEventHandler>();
 
             ContractApplicationService applicationService = new ContractApplicationService(bus);
 

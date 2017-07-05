@@ -43,7 +43,7 @@ namespace RabbitMqBusImplementation
 
             var connectionFactory = new ConnectionFactory
             {
-                HostName = serverUri.ToString(),
+                HostName = serverUri,
                 UserName = _rmqUser,
                 Password = _rmqPassword,
                 VirtualHost = "dev"
@@ -81,22 +81,60 @@ namespace RabbitMqBusImplementation
         {
             var sagaType = typeof(T);
 
+            var handledCommandTypes = sagaType.GetMethods()
+                .Where(w =>
+                {
+                    var args = w.GetParameters();
+                    if (args.Length != 1)
+                        return false;
+                    var argType = args[0].ParameterType;
+                    return
+                        w.ReturnType == typeof(void) && w.Name == "Handle"
+                        && typeof(ICommand).IsAssignableFrom(argType) && argType.IsClass;
+                })
+                .Select(s => s.GetParameters()[0].ParameterType);
+
+            foreach (var commantType in handledCommandTypes)
+            {
+                var sagaCommandQueueName = CommandBusQueueName + "." + sagaType.Name + "." + commantType.Name;
+
+                var routingKey = CommandsRoutingPrefix + sagaType.Name + "." + commantType.Name;
+
+                _rabbitChannel.QueueDeclare(sagaCommandQueueName, true, false, false);
+                _rabbitChannel.QueueBind(sagaCommandQueueName, CommandsExchangerName, routingKey);
+                _rabbitChannel.BasicConsume(sagaCommandQueueName, false, _commandConsumer);
+            }
+
             _registeredSagas.Add(sagaType);
-            var sagaQueueName = CommandBusQueueName + "." + sagaType.Name;
-
-            var routingKey = CommandsRoutingPrefix + sagaType.Name + ".#";
-
-            _rabbitChannel.QueueDeclare(sagaQueueName, true, false, false);
-            _rabbitChannel.QueueBind(sagaQueueName, CommandsExchangerName, routingKey);
-            _rabbitChannel.BasicConsume(sagaQueueName, false, _commandConsumer);
+            
 
         }
 
         public void RegisterHandler<T>() where T : IDomainEventHandler
         {
-            _registeredEventHandlers.Add(typeof(T));
+            var handlerType = typeof(T);
 
-            _rabbitChannel.QueueBind(_personalEventsQueueName, EventsExchangerName, "#");
+            var handledEventTypes = handlerType.GetMethods()
+               .Where(w =>
+               {
+                   var args = w.GetParameters();
+                   if (args.Length != 1)
+                       return false;
+                   var argType = args[0].ParameterType;
+                   return
+                       w.ReturnType == typeof(void) && w.Name == "Handle"
+                       && typeof(IDomainEvent).IsAssignableFrom(argType) && argType.IsClass;
+               })
+               .Select(s => s.GetParameters()[0].ParameterType);
+
+            foreach (var eventType in handledEventTypes)
+            {
+                var routingKey = EventsRoutingPrefix + eventType.Name;
+                
+                _rabbitChannel.QueueBind(_personalEventsQueueName, EventsExchangerName, routingKey);
+            }
+
+            _registeredEventHandlers.Add(handlerType);
         }
 
         public void SendCommand<T>(T command) where T : ICommand
