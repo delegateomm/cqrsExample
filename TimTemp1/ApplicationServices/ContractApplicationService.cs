@@ -2,6 +2,9 @@
 using TimTemp1.Abstractions;
 using TimTemp1.Commands;
 using TimTemp1.DomainEvents;
+using TimTemp1.DtoModels;
+using TimTemp1.DtoModels.DomainServiceInputModels;
+using TimTemp1.DtoModels.DomainServiceResultModels;
 
 namespace TimTemp1.ApplicationServices
 {
@@ -15,15 +18,16 @@ namespace TimTemp1.ApplicationServices
         }
 
         //TODO example - need to finish
-        public async Task CreateConract()
+        public async Task<ConractCreateActionResult> CreateConract(ContractInputModel model)
         {
-            Bus.RaiseEvent(new StartCreatingContractEvent());
-
-            var command = new CreateContractCommand();
+            var command = model.ToCreateContractCommand();
             Bus.SendCommand(command);
-            var commandComplitionResult = await Bus.WaitCommandCompletion(command.Id, CommandCompletionTimeout);
-
-            Bus.RaiseEvent(new FinishCreatingContractEvent());
+            var commandResult = await Bus.WaitCommandCompletion(command.Id, CommandCompletionTimeout);
+            return new ConractCreateActionResult
+            {
+                ContractId = ((dynamic) commandResult.Model).Id,
+                Amount = ((dynamic) commandResult.Model).Amount
+            };
         }
     }
 }

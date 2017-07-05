@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using TimTemp1.Abstractions;
+using TimTemp1.Abstractions.Enums;
 using TimTemp1.Commands;
+using TimTemp1.DomainEvents;
 
 namespace TimTemp1.Sagas
 {
@@ -15,8 +18,17 @@ namespace TimTemp1.Sagas
 
         public void Handle(CreateContractCommand command)
         {
+            Bus.RaiseEvent(new StartCreatingContractEvent());
+
             Console.WriteLine($"command Id{command.Id} - {command.GetType().Name} SUCCEED");
-            Bus.RaiseCommandCompletionEventEvent(new CommandCompletionEvent(command.Id));
+            var contractId = new Random(1000).Next(0, 9999);
+
+            Bus.RaiseEvent(new FinishCreatingContractEvent{Model = contractId});
+            Bus.RaiseCommandCompletionEventEvent(new CommandCompletionEvent(command.Id)
+            {
+                CompletionStatus = CommandCompletionStatus.Successed,
+                Model = new {Id = contractId, Amount = command.Amount}
+            });
         }
     }
 }

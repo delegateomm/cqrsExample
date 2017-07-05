@@ -7,6 +7,7 @@ using RabbitMqBusImplementation;
 using TimTemp1.Abstractions;
 using TimTemp1.ApplicationServices;
 using TimTemp1.DomainEventHandlers;
+using TimTemp1.DtoModels.DomainServiceInputModels;
 using TimTemp1.Sagas;
 
 namespace TestConsoleApp
@@ -20,6 +21,14 @@ namespace TestConsoleApp
             Console.ReadLine();
         }
 
+        private class MyClass
+        {
+            public string Name { get; set; }
+
+            public int Age { get; set; }
+
+        }
+
         private static async void Test()
         {
             IBus bus = new RabbitMqBus("timnginxdev01.spb.local");
@@ -31,7 +40,7 @@ namespace TestConsoleApp
 
             ContractApplicationService applicationService = new ContractApplicationService(bus);
 
-            await applicationService.CreateConract();
+            var result = await applicationService.CreateConract(new ContractInputModel{Amount = 100800.99});
         }
     }
 }

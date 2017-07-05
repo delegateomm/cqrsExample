@@ -56,6 +56,9 @@
     <Compile Include="DomainEventHandlers\TestEventHandler.cs" />
     <Compile Include="DomainEvents\FinishCreatingContractEvent.cs" />
     <Compile Include="DomainEvents\StartCreatingContractEvent.cs" />
+    <Compile Include="DtoModels\DomainServiceInputModels\ContractInputModel.cs" />
+    <Compile Include="DtoModels\DomainServiceResultModels\ConractCreateActionResult.cs" />
+    <Compile Include="DtoModels\DtoModelsExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Sagas\ContractSaga.cs" />
   </ItemGroup>

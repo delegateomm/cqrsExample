@@ -12,7 +12,7 @@ namespace RabbitMqBusImplementation
 {
     public class RabbitMqBus : IBus, IDisposable
     {
-        private Dictionary<Guid, TaskCompletionSource<CommandCompletionStatus>> _commandsTasks;
+        private Dictionary<Guid, TaskCompletionSource<CommandCompletionEvent>> _commandsTasks;
         private readonly IConnection _rabbitConnection;
         private readonly IModel _rabbitChannel;
         private readonly string _personalEventsQueueName;
@@ -35,7 +35,7 @@ namespace RabbitMqBusImplementation
 
         public RabbitMqBus(string serverUri)
         {
-            _commandsTasks = new Dictionary<Guid, TaskCompletionSource<CommandCompletionStatus>>();
+            _commandsTasks = new Dictionary<Guid, TaskCompletionSource<CommandCompletionEvent>>();
             _registeredSagas = new HashSet<Type>();
             _registeredEventHandlers = new HashSet<Type>();
             _knownDomainEventTypes = new List<Type>();
@@ -51,9 +51,11 @@ namespace RabbitMqBusImplementation
             _rabbitConnection = connectionFactory.CreateConnection();
             _rabbitChannel = _rabbitConnection.CreateModel();
 
+            /* TODO сделать опциональной независимую очередь со всеми командами
             _rabbitChannel.QueueDeclare(CommandBusQueueName, true, false, false);
             _rabbitChannel.ExchangeDeclare(CommandsExchangerName, "topic");
             _rabbitChannel.QueueBind(CommandBusQueueName, CommandsExchangerName, "#");
+            */
 
             var properties = _rabbitChannel.CreateBasicProperties();
             properties.Persistent = true;
@@ -139,7 +141,7 @@ namespace RabbitMqBusImplementation
 
         public void SendCommand<T>(T command) where T : ICommand
         {
-            TaskCompletionSource<CommandCompletionStatus> tcs = new TaskCompletionSource<CommandCompletionStatus>();
+            var tcs = new TaskCompletionSource<CommandCompletionEvent>();
             _commandsTasks.Add(command.Id, tcs);
 
             var bodyMessage = command.ToRabbitMessageByteArray();
@@ -170,7 +172,7 @@ namespace RabbitMqBusImplementation
             _rabbitChannel.BasicPublish(EventsExchangerName, routingKey, null, bodyMessage);
         }
 
-        public Task<CommandCompletionStatus> WaitCommandCompletion(Guid commandId, TimeSpan timeout)
+        public Task<CommandCompletionEvent> WaitCommandCompletion(Guid commandId, TimeSpan timeout)
         {
             if (!_commandsTasks.ContainsKey(commandId))
                 throw new Exception("Command not found"); //TODO завести свой класс на исключение
@@ -243,7 +245,7 @@ namespace RabbitMqBusImplementation
 
                 if (_commandsTasks.ContainsKey(commandId))
                 {
-                    _commandsTasks[commandId].TrySetResult(commandCompletionEvent.CompletionStatus);
+                    _commandsTasks[commandId].TrySetResult(commandCompletionEvent);
                     _commandsTasks.Remove(commandId);
                 }
 

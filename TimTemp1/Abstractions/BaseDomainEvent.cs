@@ -6,6 +6,7 @@ namespace TimTemp1.Abstractions
     {
         public Guid Id { get; set; }
         public DateTime Timestamp { get; set; }
+        public object Model { get; set; }
 
         protected BaseDomainEvent()
         {

@@ -32,7 +32,7 @@ namespace TimTemp1.Abstractions
 
         void RaiseCommandCompletionEventEvent(ICommandCompletionEvent commandCompletionEvent);
 
-        Task<CommandCompletionStatus> WaitCommandCompletion(Guid commandId, TimeSpan timeout);
+        Task<CommandCompletionEvent> WaitCommandCompletion(Guid commandId, TimeSpan timeout);
 
         void RegisterSaga<T>() where T : ISaga;
 
